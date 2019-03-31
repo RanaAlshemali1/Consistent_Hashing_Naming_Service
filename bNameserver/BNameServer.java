@@ -17,6 +17,9 @@ public class BNameServer {
 
 	public static final String ENTER_COMMAND = "enter";
 	public static final String EXIT_COMMAND = "exit"; 
+	public static final String PRED_EXIT_COMMAND = "predExit";  
+	public static final String SUCC_EXIT_COMMAND = "succExit";  
+	
 	public static final String ASK_RANGE_COMMAND = "askRange";
 	public static final String GET_DATA_COMMAND = "getData"; 
 	public static final String UPDATE_INFO_COMMAND = "updateInfo";
@@ -157,6 +160,7 @@ public class BNameServer {
 				while (true) {
 					socket = null;
 					socket = serverSocket.accept();
+					
 					// input and output streams
 					dis = new DataInputStream(socket.getInputStream());
 					dos = new DataOutputStream(socket.getOutputStream());
@@ -177,21 +181,30 @@ public class BNameServer {
 			case ENTER_COMMAND:
 				System.out.println("New connection is accepted .."); 
 				enter();
-				break;
-			case EXIT_COMMAND:
-				exit();
-				break;
+				break; 
 			case GET_DATA_COMMAND:
 				System.out.println("Sending Data .."); 
 				giveDataEntery();
-				System.out.println("BNS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
-				System.out.println("BNS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				//System.out.println("1) BNS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
+				//System.out.println("1) BNS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
 				break;
 			case UPDATE_INFO_COMMAND:
 				System.out.println("Updating Info .."); 
 				UpdateInfoEntery();
-				System.out.println("BNS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
-				System.out.println("BNS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				//System.out.println("2) BNS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
+				//System.out.println("2) BNS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				break;
+			case PRED_EXIT_COMMAND:
+				System.out.println("Predecessor Exiting.."); 
+				predExit();
+				//System.out.println("3) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
+				//System.out.println("3) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				break;
+			case SUCC_EXIT_COMMAND:
+				System.out.println("Successor Exiting.."); 
+				succExit();
+				//System.out.println("4) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
+				//System.out.println("4) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
 				break;
 			default:
 				//dos.writeUTF(INVALID_INPUT);
@@ -360,10 +373,44 @@ public class BNameServer {
 				e.printStackTrace();
 			}
 		}
+ 
+		private void predExit() {
+			try {
+				predID = dis.readInt();
+				predIP = dis.readUTF();
+				predPort = dis.readInt();
+				dataRange[0] = dis.readInt();  
+				
+				// get data 
+				String getData = dis.readUTF();
+				if(!getData.equals("")) {
+					String[] splitData = getData.split(" ");
+					//System.out.println("splitData: " + splitData.length/2); 
+					int key;
+					String value;
+					for(int i = 0; i < splitData.length ; i++) {
+						key = Integer.valueOf(splitData[i]);
+						i++;
+						value = splitData[i];
+						data.put(key, value);
+					}
+				}
+				printData();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
-		private void exit() {
-			// TODO Auto-generated method stub
-
+		private void succExit() {
+			try {
+				succID = dis.readInt();
+				succIP = dis.readUTF();
+				succPort = dis.readInt(); 
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		private void UpdateInfoEntery() {
@@ -401,7 +448,7 @@ public class BNameServer {
 						data.remove(i);
 					}
 				}
-				System.out.println(sendData); 
+				//System.out.println(sendData); 
 				dos.writeUTF(sendData);
 				// new Range
 				dataRange[0] = newDataRange[1] + 1;  
