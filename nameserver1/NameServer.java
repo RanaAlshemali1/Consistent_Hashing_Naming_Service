@@ -21,18 +21,22 @@ public class NameServer {
 	public static final String EXIT_COMMAND = "exit";  
 	public static final String PRED_EXIT_COMMAND = "predExit";  
 	public static final String SUCC_EXIT_COMMAND = "succExit";  
-	
+
+	public static final String PRINT_COMMAND = "print";
 	public static final String ASK_RANGE_COMMAND = "askRange";
 	public static final String GET_DATA_COMMAND = "getData";
 	public static final String UPDATE_INFO_COMMAND = "updateInfo";
 
-	public static final String KEY_NOT_FOUND_MESSAGE = "Key Not Found";
-	public static final String SUCCESSFUL_DELETION_MESSAGE = "Successful Deletion";
-	public static final String SUCCESSFUL_ENTERY_MESSAGE = "Successful Entry";
-	public static final String SUCCESSFUL_EXIT_MESSAGE = "Successful Exit";
+	public static final String QUERY_COMMAND = "query";
+	public static final String QUERY_RESPONSE = "queryResponse";
 
-	private String btnsIP;
-	private int btnsPort;
+	public static final String KEY_NOT_FOUND_MESSAGE = "Key not found in ";
+	public static final String KEY_FOUND_MESSAGE = "Key found in ";
+	public static final String KEY_INSERTED_MESSAGE = "Key is successfully inserted in ";
+	public static final String KEY_DELETED_MESSAGE = "Key is successfully deleted from ";
+
+	public static final String SUCCESSFUL_ENTERY_MESSAGE = "Successful Entry for ID ";
+	public static final String SUCCESSFUL_EXIT_MESSAGE = "Successful Exit for ID ";
 
 	private static int[] dataRange = new int[2];
 	private static HashMap<Integer, String> data = new HashMap<Integer, String>();
@@ -48,17 +52,19 @@ public class NameServer {
 		String fileName = args[0];
 		FileInputStream fstream = new FileInputStream(fileName);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fstream)); 
-
-		myIP = "localhost";
+		
 		myID = Integer.parseInt(br.readLine());
-		myPort = Integer.parseInt(br.readLine());
+		String nsInfo = br.readLine().toString();
+		String[] nsInfoSplit = nsInfo.split(" ");
+		myIP = nsInfoSplit[0];
+		myPort = Integer.parseInt(nsInfoSplit[1]);
 		String bsnsInfo = br.readLine().toString();
 		String[] bsnsInfoSplit = bsnsInfo.split(" ");
 		bnsIP = bsnsInfoSplit[0];
 		bnsPort = Integer.parseInt(bsnsInfoSplit[1]);
 
-		System.out.println("ID = " + myID + ", Port = " + myPort); 
-		System.out.println("bnsIP = " + bnsIP + ", bnsPort = " + bnsPort); 
+		System.out.println("ID = " + myID + ", IP = " + myIP + ", Port = " + myPort);
+		System.out.print("bnsIP = " + bnsIP + ", bnsPort = " + bnsPort); 
 
 		serverSocket = new ServerSocket(myPort);
 
@@ -76,16 +82,10 @@ public class NameServer {
 	static class ThreadA extends Thread {   
 
 
-		private Scanner scanner;
-
-		public ThreadA() {
-
-		}
+		private Scanner scanner; 
 
 		@Override
-		public void run() {
-			//System.out.println("ThreadA listening for enter / exit .."); 
-
+		public void run() { 
 			while (true) {
 				scanner = new Scanner(System.in);  
 				String command = null; 
@@ -94,18 +94,18 @@ public class NameServer {
 
 				switch (command) {
 				case ENTER_COMMAND:
-					enter();
-					//System.out.println("NS Entry: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
-					//System.out.println("NS Entry: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+					enter(); 
 					break;
 				case EXIT_COMMAND:
 					exit();
-					//System.out.println("NS Exit: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
-					//System.out.println("NS Exit: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
-					//System.out.println("NS Exit: dstsLength: " + data.size());
+					break;
+				case PRINT_COMMAND:
+					System.out.println("NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
+					System.out.println("NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+					printData();
 					break;
 				default:
-					//dos.writeUTF(INVALID_INPUT);
+					System.out.println("Invalid Input .."); 
 					break;
 				}
 			}
@@ -148,14 +148,15 @@ public class NameServer {
 				getDataEntery(); 
 				updateNewPred();
 
-				System.out.println("dataLength: " + data.size()); 
+				//System.out.println("dataLength: " + data.size()); 
 
-				System.out.println("---------------------------"); 
-				System.out.println(SUCCESSFUL_ENTERY_MESSAGE); 
+				System.out.println("\n---------------------------"); 
+				System.out.println(SUCCESSFUL_ENTERY_MESSAGE + myID); 
 				System.out.println("1) Range: [" + dataRange[0] + "-" + dataRange[1]+"]");  				
 				System.out.println("2) succID: " + succID + ", predID: " + predID); 
 				System.out.println("3) Traversed Servers:"); 
 				System.out.print(IDs);  
+				System.out.println("---------------------------"); 
 
 
 			} catch (IOException e) {
@@ -164,7 +165,7 @@ public class NameServer {
 			}
 
 		}
-		
+
 		private void updateNewPred() {
 			// TODO Auto-generated method stub
 			try {
@@ -235,39 +236,39 @@ public class NameServer {
 
 		private void exit() {
 			// TODO Auto-generated method stub  
-				// inform successor
-				inforSuccessorExit(); 
-				// inform predecessor
-				inforPredecessorExit();
-				System.out.println("---------------------------"); 
-				System.out.println(SUCCESSFUL_EXIT_MESSAGE); 
-				System.out.println("1) succID: " + succID + ", predID: " + predID); 
-				System.out.println("2) Range Handed: [" + dataRange[0] + "-" + dataRange[1]+"]");  
-				
-				succID = predID = succPort = predPort = dataRange[0] = dataRange[1] = -1;
-				succIP = predIP = null;
-				
+			// inform successor
+			inforSuccessorExit(); 
+			// inform predecessor
+			inforPredecessorExit();
+			System.out.println("\n---------------------------"); 
+			System.out.println(SUCCESSFUL_EXIT_MESSAGE + myID); 
+			System.out.println("1) succID: " + succID + ", predID: " + predID); 
+			System.out.println("2) Range Handed: [" + dataRange[0] + "-" + dataRange[1]+"]");  
+			System.out.println("---------------------------"); 
+			succID = predID = succPort = predPort = dataRange[0] = dataRange[1] = -1;
+			succIP = predIP = null;
+
 		}
-		
+
 		private void inforPredecessorExit() {
 			try {
 				// inform successor 
 				Socket socket = new Socket (predIP, predPort);
 				DataInputStream dis = new DataInputStream(socket.getInputStream());
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-				
+
 				// pass id, ip, port
 				dos.writeUTF(SUCC_EXIT_COMMAND); 
-				
+
 				dos.writeInt(succID);
 				dos.writeUTF(succIP);
 				dos.writeInt(succPort);
-				  
+
 				socket.close();
 				dis.close();
 				dos.close();
-				 
-				
+
+
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -276,23 +277,22 @@ public class NameServer {
 				e.printStackTrace();
 			}
 		}
-		
+
 		private void inforSuccessorExit() {
 			try {
 				// inform successor 
 				Socket socket = new Socket (succIP, succPort);
 				DataInputStream dis = new DataInputStream(socket.getInputStream());
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-				
+
 				// pass id, ip, port
 				dos.writeUTF(PRED_EXIT_COMMAND); 
-				
+
 				dos.writeInt(predID);
 				dos.writeUTF(predIP);
 				dos.writeInt(predPort);
-				
 				dos.writeInt(dataRange[0]); 
-				
+
 				// give Successor Data 
 				String sendData = "";
 				for(int i = dataRange[0]; i <= dataRange[1] ; i++) {
@@ -306,7 +306,7 @@ public class NameServer {
 				socket.close();
 				dis.close();
 				dos.close();
-	
+
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -316,7 +316,7 @@ public class NameServer {
 			}
 		}
 
-		 
+
 	}
 
 	// for lookup / insertion / deletion from connection
@@ -359,34 +359,47 @@ public class NameServer {
 			switch (command) { 
 			case PRED_EXIT_COMMAND:
 				System.out.println("Predecessor Exiting.."); 
+				System.out.println("Getting Data .."); 
 				predExit();
 				//System.out.println("1) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
 				//System.out.println("1) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				System.out.print("> ");
 				break;
 			case SUCC_EXIT_COMMAND:
 				System.out.println("Successor Exiting.."); 
 				succExit();
 				//System.out.println("2) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
 				//System.out.println("2) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				System.out.print("> ");
 				break;
 			case ASK_RANGE_COMMAND:
 				System.out.println("Checking Range .."); 
 				askRange();
+				System.out.print("> ");
 				break;
 			case GET_DATA_COMMAND:
 				System.out.println("Sending Data .."); 
 				giveDataEntery();
 				//System.out.println("3) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
 				//System.out.println("3) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				System.out.print("> ");
 				break;
 			case UPDATE_INFO_COMMAND:
 				System.out.println("Updating Info .."); 
-				UpdateInfoEntery();
+				UpdateInfoEntery(); 
 				//System.out.println("4) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
 				//System.out.println("4) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				System.out.print("> ");
 				break;
-			default:
-				//dos.writeUTF(INVALID_INPUT);
+			case QUERY_COMMAND:
+				System.out.println("Answering Query .."); 
+				query(); 
+				//System.out.println("4) NS Update: succID: " + succID + ", predID: " + predID + ", succIP: " + succIP + ", predIP: " + predIP);
+				//System.out.println("4) NS Update: succPort: " + succPort + ", predPort: " + predPort + ", startRange: " + dataRange[0] + ", endRange: " + dataRange[1]);
+				System.out.print("> ");
+				break;
+			default: 
+				System.out.println("Invalid Input .."); 
 				break;
 			}
 
@@ -395,13 +408,81 @@ public class NameServer {
 			dos.close();
 		}
 
+		//KEY_NOT_FOUND_MESSAGE;
+		//KEY_FOUND_MESSAGE;
+		//KEY_INSERTED_MESSAGE ;
+
+		private void query() {
+			// TODO Auto-generated method stub
+			try {
+				String command = dis.readUTF(); 
+				int key = dis.readInt();
+				String value = dis.readUTF();
+				String IDs = dis.readUTF();
+				String Message = "";
+				IDs += "   ID: "+ myID +"\n";
+
+				// key in range, tell bns
+				if(key >= dataRange[0] && key <= dataRange[1]) {
+					Socket socket = new Socket(bnsIP, bnsPort);
+					DataInputStream dis = new DataInputStream(socket.getInputStream());
+					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+					dos.writeUTF(QUERY_RESPONSE);
+					
+					if(command.equals(INSERT_COMMAND)) {
+						data.put(key, value);  
+						Message = KEY_INSERTED_MESSAGE + myID; 
+					} // lookup and delete
+					else if (data.containsKey(key)) {
+						// loockup
+						if(command.equals(LOOKUP_COMMAND)) { 
+							Message = KEY_FOUND_MESSAGE + myID + ": " + data.get(key);
+						}// delete
+						else if(command.equals(DELETE_COMMAND)) {
+							data.remove(key);
+							Message = KEY_DELETED_MESSAGE + myID;
+						}
+					} // key in range but not found
+					else { 
+						Message = KEY_NOT_FOUND_MESSAGE + myID; 
+					}
+					
+					dos.writeUTF(Message);
+					dos.writeUTF(IDs);
+
+					socket.close();
+					dis.close();
+					dos.close();
+
+				} // key not in range, ask next
+				else {
+					//System.out.println("Not Found ..");
+					Socket socket = new Socket(succIP, succPort);
+					DataInputStream dis = new DataInputStream(socket.getInputStream());
+					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+					dos.writeUTF(QUERY_COMMAND);
+
+					dos.writeUTF(command);
+					dos.writeInt(key);
+					dos.writeUTF(value);
+					dos.writeUTF(IDs); 
+
+					socket.close();
+					dis.close();
+					dos.close();
+				} 
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
 		private void predExit() {
 			try {
 				predID = dis.readInt();
 				predIP = dis.readUTF();
 				predPort = dis.readInt();
 				dataRange[0] = dis.readInt();  
-				
+
 				// get data 
 				String getData = dis.readUTF();
 				if(!getData.equals("")) {
@@ -416,8 +497,9 @@ public class NameServer {
 						data.put(key, value);
 					}
 				}
-				
+
 				printData();
+				System.out.println("-> New predecessor is: " + predID);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -429,12 +511,13 @@ public class NameServer {
 				succID = dis.readInt();
 				succIP = dis.readUTF();
 				succPort = dis.readInt(); 
+				System.out.println("-> New successor is: " + succID);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		
+
 		private void askRange() {
 			// TODO Auto-generated method stub
 			try {
@@ -463,6 +546,7 @@ public class NameServer {
 				succID = dis.readInt();
 				succIP = dis.readUTF();
 				succPort = dis.readInt();
+				System.out.println("-> New successor is: " + succID);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -498,7 +582,7 @@ public class NameServer {
 				dataRange[0] = newDataRange[1] + 1;  
 
 				printData();
-
+				System.out.println("-> New predecessor is: " + predID);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
