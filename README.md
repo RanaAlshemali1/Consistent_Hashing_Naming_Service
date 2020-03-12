@@ -1,4 +1,4 @@
-# Consistent Hashing-based Naming Service
+# Consistent Hashing-based Naming Service | March 2019
 This project we have implemented a consistent hashing (CH)-based flat naming system. Consistent hashing provides a lookup service for key-value pairs. The CH system stores (key, value) pairs on a distributed set of servers. These servers collaboratively provide lookup service along with insertion and deletion. In this program, we implemented the CH name servers and a boot-strap CH server, which is a special CH server with certain extra functionalities.
 
 ## Several assumptions are made as follows:
