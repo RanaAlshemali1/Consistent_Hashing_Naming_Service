@@ -8,3 +8,7 @@ This project we have implemented a consistent hashing (CH)-based flat naming sys
 4. The Bootstrap name server has the ID 0. 
 5. The lookup, insertion and deletion operations are executed only at the Bootstrap name server.
 6. The name servers interact with one another using sockets primitive.
+
+### Team Members: 
+1. Rana Alshemali
+2. Lei Xian
